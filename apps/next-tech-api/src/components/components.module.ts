@@ -13,6 +13,7 @@ import { CommentModule } from './comment/comment.module';
 import { NoticeModule } from './notice/notice.module';
 import { FaqModule } from './faq/faq.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TelegramModule } from './telegram/telegram.module';
     NoticeModule,
     FaqModule,
     TelegramModule,
+    ChatModule,
   ],
 })
 export class ComponentsModule {}
