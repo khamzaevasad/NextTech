@@ -39,12 +39,20 @@ export class ChatService {
 
   public async askAi(input: AiChatInput): Promise<{ reply: string }> {
     const message = input.message?.trim();
+    const apiKey = process.env.OPEN_AI_KEY || this.configService.get<string>('OPEN_AI_KEY');
+    const model = process.env.OPENAI_MODEL || this.configService.get<string>('OPENAI_MODEL') || this.fallbackModel;
+
+    this.logDebug('route hit', {
+      bodyKeys: input ? Object.keys(input) : [],
+      hasMessage: Boolean(message),
+      messageLength: message?.length || 0,
+      hasOpenAiKey: Boolean(apiKey),
+      model,
+    });
 
     if (!message) {
       throw new BadRequestException('Message is required');
     }
-
-    const apiKey = process.env.OPEN_AI_KEY || this.configService.get<string>('OPEN_AI_KEY');
 
     if (!apiKey) {
       this.logger.error('OPEN_AI_KEY is not configured');
@@ -52,7 +60,6 @@ export class ChatService {
     }
 
     try {
-      const model = this.configService.get<string>('OPENAI_MODEL') || this.fallbackModel;
       const response = await fetch(this.openAiUrl, {
         method: 'POST',
         headers: {
@@ -76,6 +83,7 @@ export class ChatService {
       }
 
       const reply = this.extractReply(data);
+      this.logDebug('reply parsed', { replyLength: reply.length });
 
       if (!reply) {
         this.logger.error('OpenAI response did not include reply text');
@@ -95,6 +103,11 @@ export class ChatService {
       this.logger.error('AI chat request failed', error as Error);
       throw new ServiceUnavailableException('AI chat is not available right now');
     }
+  }
+
+  private logDebug(message: string, details: Record<string, unknown>): void {
+    if (process.env.NODE_ENV === 'production') return;
+    this.logger.log(`[AI_CHAT_DEBUG] ${message} ${JSON.stringify(details)}`);
   }
 
   private async parseOpenAiResponse(response: Response): Promise<OpenAiResponse> {
